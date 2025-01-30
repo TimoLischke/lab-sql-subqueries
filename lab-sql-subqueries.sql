@@ -8,6 +8,9 @@ WHERE film_id=(SELECT film_id FROM film WHERE title="HUNCHBACK IMPOSSIBLE") GROU
 SELECT title, length, 
 	(SELECT ROUND(AVG(length), 2) FROM film AS avg_length)
 FROM film WHERE length > (SELECT AVG(length) FROM film) ORDER BY title;
+-- OR:
+SELECT title, length FROM film
+WHERE length > (SELECT AVG(length) FROM film);
 
 -- 3. Use a subquery to display all actors who appear in the film "Alone Trip".
 SELECT film_id, title, concat(first_name, " ", last_name) AS name FROM actor
@@ -33,5 +36,19 @@ WHERE country= (SELECT country from country WHERE country = "CANADA") ORDER BY n
 -- 7. Find the films rented by the most profitable customer in the Sakila database. 
 -- You can use the customer and payment tables to find the most profitable customer, 
 -- i.e., the customer who has made the largest sum of payments.
+SELECT DISTINCT title FROM film WHERE film_id IN 
+					(SELECT film_id FROM inventory WHERE inventory_id IN 
+						(SELECT inventory_id FROM rental WHERE customer_id = 
+							(SELECT customer_id FROM payment 
+								GROUP BY customer_id ORDER BY SUM(amount) LIMIT 1)));
 
--- 8. Retrieve the client_id and the total_amount_spent of those clients who spent more than the average of the total_amount spent by each client. You can use subqueries to accomplish this.
+-- 8. Retrieve the client_id and the total_amount_spent of those clients
+-- who spent more than the average of the total_amount spent by each client. 
+-- You can use subqueries to accomplish this.
+SELECT customer_id, sum(amount) AS total_amount FROM payment GROUP BY customer_id ORDER BY total_amount;
+SELECT avg(total_spent) AS avg_total_spent
+FROM (SELECT customer_id, sum(amount) AS total_spent FROM payment GROUP BY customer_id) AS total_spent;
+SELECT customer_id, sum(amount) AS total_spent FROM payment GROUP BY customer_id
+HAVING total_spent > (SELECT avg(total_spent) AS avg_total_spent
+	FROM (SELECT customer_id, sum(amount) AS total_spent FROM payment GROUP BY customer_id) AS total_spent) ORDER BY total_spent;
+
